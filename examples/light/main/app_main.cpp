@@ -18,7 +18,6 @@
 #include <app_reset.h>
 
 static const char *TAG = "app_main";
-uint16_t light_endpoint_id;
 uint16_t temperature_endpoint_id;
 uint16_t pressure_endpoint_id;
 uint16_t humidity_endpoint_id;
@@ -93,7 +92,6 @@ extern "C" void app_main()
     nvs_flash_init();
 
     /* Initialize driver */
-    app_driver_handle_t light_handle = app_driver_light_init();
     app_driver_handle_t temperature_handle = app_driver_temperature_init();
     app_driver_handle_t pressure_handle = app_driver_pressure_init();
     app_driver_handle_t humidity_handle = app_driver_humidity_init();
@@ -103,17 +101,6 @@ extern "C" void app_main()
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
-
-    // endpoint (color temperature light device type)
-    color_temperature_light::config_t light_config;
-    light_config.on_off.on_off = DEFAULT_POWER;
-    light_config.on_off.lighting.start_up_on_off = nullptr;
-    light_config.level_control.current_level = DEFAULT_BRIGHTNESS;
-    light_config.level_control.lighting.start_up_current_level = DEFAULT_BRIGHTNESS;
-    light_config.color_control.color_mode = EMBER_ZCL_COLOR_MODE_COLOR_TEMPERATURE;
-    light_config.color_control.enhanced_color_mode = EMBER_ZCL_COLOR_MODE_COLOR_TEMPERATURE;
-    light_config.color_control.color_temperature.startup_color_temperature_mireds = nullptr;
-    endpoint_t *light_endpoint = color_temperature_light::create(node, &light_config, ENDPOINT_FLAG_NONE, light_handle);
 
     // endpoint (temperature device type)
     temperature_sensor::config_t temperature_config;
@@ -138,15 +125,14 @@ extern "C" void app_main()
     endpoint_t *humidity_endpoint = humidity_sensor::create(node, &humidity_config, ENDPOINT_FLAG_NONE, humidity_handle);
 
     /* These node and endpoint handles can be used to create/add other endpoints and clusters. */
-    if (!node || !light_endpoint || !temperature_endpoint || !pressure_endpoint || !humidity_endpoint) {
+    if (!node || !temperature_endpoint || !pressure_endpoint || !humidity_endpoint) {
         ESP_LOGE(TAG, "Matter node creation failed");
     }
 
-    light_endpoint_id = endpoint::get_id(light_endpoint);
+    // light_endpoint_id = endpoint::get_id(light_endpoint);
     temperature_endpoint_id = endpoint::get_id(temperature_endpoint);
     pressure_endpoint_id = endpoint::get_id(pressure_endpoint);
     humidity_endpoint_id = endpoint::get_id(humidity_endpoint);
-    ESP_LOGI(TAG, "Light created with endpoint_id %d", light_endpoint_id);
     ESP_LOGI(TAG, "Temperature created with endpoint_id %d", temperature_endpoint_id);
     ESP_LOGI(TAG, "Pressure created with endpoint_id %d", pressure_endpoint_id);
     ESP_LOGI(TAG, "Humidity created with endpoint_id %d", humidity_endpoint_id);
@@ -165,7 +151,6 @@ extern "C" void app_main()
     }
 
     /* Starting driver with default values */
-    app_driver_light_set_defaults(light_endpoint_id);
     app_driver_temperature_set_defaults(temperature_endpoint_id);
     app_driver_pressure_set_defaults(pressure_endpoint_id);
     app_driver_humidity_set_defaults(humidity_endpoint_id);
